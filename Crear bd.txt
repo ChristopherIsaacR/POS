@@ -1,0 +1,103 @@
+-- 1. Crear la base de datos
+CREATE DATABASE IF NOT EXISTS inventario2024 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE inventario2024;
+
+-- 2. Tablas independientes (sin dependencias externas)
+CREATE TABLE categorias (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    descripcion TEXT
+);
+
+CREATE TABLE proveedores (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    direccion TEXT,
+    telefono VARCHAR(50),
+    email VARCHAR(100)
+);
+
+CREATE TABLE clientes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    direccion TEXT,
+    telefono VARCHAR(50),
+    email VARCHAR(100)
+);
+
+CREATE TABLE password (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_usuario VARCHAR(255) NOT NULL,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_bloqueo DATETIME,
+    intentos_fallidos INT,
+    session_id VARCHAR(255),
+    hora_inicio_sesion DATETIME,
+    hora_fin_sesion DATETIME
+);
+
+-- 3. Tablas con dependencia de primer nivel
+CREATE TABLE productos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    descripcion TEXT,
+    precio DECIMAL(10, 2) NOT NULL,
+    cantidad_stock INT NOT NULL,
+    foto VARCHAR(255),
+    codigo_barra VARCHAR(50),
+    modelo VARCHAR(50),
+    color VARCHAR(50),
+    talla VARCHAR(50),
+    material VARCHAR(50),
+    proveedor_id INT,
+    ubicacion VARCHAR(255),
+    categoria_id INT,
+    FOREIGN KEY (proveedor_id) REFERENCES proveedores(id),
+    FOREIGN KEY (categoria_id) REFERENCES categorias(id)
+);
+
+CREATE TABLE ordenes_compra (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE NOT NULL,
+    proveedor_id INT,
+    estado VARCHAR(50),
+    FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
+);
+
+CREATE TABLE ventas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE NOT NULL,
+    cliente_id INT,
+    total DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+);
+
+-- 4. Tablas de detalle y dependencias secundarias (relaciones muchos a muchos)
+CREATE TABLE detalle_orden_compra (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    orden_compra_id INT,
+    producto_id INT,
+    cantidad INT NOT NULL,
+    FOREIGN KEY (orden_compra_id) REFERENCES ordenes_compra(id),
+    FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
+CREATE TABLE detalle_venta (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    venta_id INT,
+    producto_id INT,
+    cantidad INT NOT NULL,
+    precio DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (venta_id) REFERENCES ventas(id),
+    FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
+CREATE TABLE alertas_stock (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    producto_id INT,
+    cantidad INT NOT NULL,
+    fecha_alerta DATE NOT NULL,
+    FOREIGN KEY (producto_id) REFERENCES productos(id)
+);

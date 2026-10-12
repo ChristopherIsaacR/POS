@@ -6,6 +6,8 @@ from tkinter import messagebox
 from datetime import datetime, timedelta
 import secrets
 import subprocess
+import sys
+import os
 
 global session_token
 global usuario_actual
@@ -25,12 +27,49 @@ L="Black"
 BgButton="#3289c8"
 BgButton_Selet="#08acef"
 
-###PRUEBA NADA MAS SOBRE OTRO LOGIN####
+
+def destruir_widget(widget):
+    """Destruye un widget solo si todavía existe."""
+    try:
+        if widget is not None and widget.winfo_exists():
+            widget.destroy()
+    except TclError:
+        pass
+
+
+def destruir_frame_por_nombre(nombre):
+    """Destruye un frame global si fue creado y sigue activo."""
+    widget = globals().get(nombre)
+    if widget is not None:
+        destruir_widget(widget)
+
+#------------------Abrir el módulo de inventario------------------
 def abrir_Home():
-    menu.destroy()
-    hora_arg = hora_inicio_sesion.isoformat() if 'hora_inicio_sesion' in globals() and hora_inicio_sesion else datetime.now().isoformat()
-    subprocess.Popen(["python", "Inventario menu  prueba 1.13.py", usuario_actual or "Invitado", hora_arg])
-#-----------------------
+    # Cambia este nombre si tu archivo del menú tiene otro nombre.
+    archivo_inventario = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "Inventario_menu.py"
+    )
+    if not os.path.isfile(archivo_inventario):
+        messagebox.showerror(
+            "No se encontró el menú",
+            "No se encontró el archivo del inventario:\\n"
+            f"{archivo_inventario}\\n\\n"
+            "Verifica el nombre del archivo en la función abrir_Home()."
+        )
+        return
+
+    hora_arg = (
+        hora_inicio_sesion.isoformat()
+        if globals().get("hora_inicio_sesion")
+        else datetime.now().isoformat()
+    )
+    try:
+        subprocess.Popen([sys.executable, archivo_inventario, usuario_actual or "Invitado", hora_arg])
+        destruir_widget(menu)
+    except OSError as err:
+        messagebox.showerror("Error al abrir inventario", str(err))
+#---------------------------------------------------------------
 
 #------------------Frame menu default-----------------
 menu = Tk()
@@ -47,14 +86,14 @@ def cambio_de_tema():
     B="Black"
     L="White"
     if 'login_screen' in globals():
-        login_frame.destroy()
+        destruir_widget(login_frame)
     login_screen()
 def cambio_de_tema_blanco():
     global B, L
     B="White"
     L="Black"
     if 'login_screen' in globals():
-        login_frame.destroy()
+        destruir_widget(login_frame)
     login_screen()
 
 def crear_toggle_tema(parent, relx, rely):
@@ -164,7 +203,8 @@ def verificar_usuario():
             result = cursor.fetchone()
             if result:
                 hashed_password, intentos_fallidos, fecha_bloqueo = result
-                if bcrypt.checkpw(contrasena.encode('utf-8'), hashed_password.encode('utf-8')):
+                hash_bytes = hashed_password if isinstance(hashed_password, bytes) else hashed_password.encode("utf-8")
+                if bcrypt.checkpw(contrasena.encode("utf-8"), hash_bytes):
                     print("Login exitoso")
                     session_token = generate_session_token()
                     usuario_actual = usuario  # Actualiza el usuario actual
@@ -223,7 +263,11 @@ def verificar_sesion_activa():
         print(f"Sesión activa para {usuario_actual}")
         if session_label:
             session_label.destroy()
-        session_label = Label(menu,text=usuario_actual + " en Sesión", bg=B, fg="#3289c8", font=("Comic Sans MS", 12),borderwidth=0, relief="ridge").pack(side=BOTTOM)
+        session_label = Label(
+            menu, text=usuario_actual + " en Sesión", bg=B, fg="#3289c8",
+            font=("Comic Sans MS", 12), borderwidth=0, relief="ridge"
+        )
+        session_label.pack(side=BOTTOM)
         #session_label.place(relx=.85,rely=.92 )
         abrir_Home()
         # Lógica para mostrar la ventana principal o continuar con la sesión activa
@@ -380,11 +424,11 @@ def login_screen():
     global imagenUser, user, lock  
     global login_frame
 
-    inicio.destroy()
+    destruir_widget(inicio)
     if 'registro_frame' in globals():
-        registro_frame.destroy()
+        destruir_widget(registro_frame)
     if 'recuperacion_frame' in globals():
-        recuperacion_frame.destroy()
+        destruir_widget(recuperacion_frame)
 
 
     login_frame = Frame(menu, width=x, height=y, bg=B)
@@ -404,7 +448,7 @@ def login_screen():
     cuadroUsuario.config(justify="center", font=("Arial", 12), borderwidth=0, relief="ridge", highlightthickness=2, highlightcolor="blue", highlightbackground="#3ba3ee")
 
     user = PhotoImage(file="Img/user1.png")
-    user=Label(login_frame, image=user, bg=B).grid(row=0, column=0, padx=10, pady=10)
+    Label(login_frame, image=user, bg=B).grid(row=0, column=0, padx=10, pady=10)
 
     global cuadroPassword
     cuadroPassword = Password(Useringreso, "Contraseña",bg=B)
@@ -446,11 +490,11 @@ def registro_screen():
     global imagenUser1, user1, lock1 
     global registro_frame
 
-    inicio.destroy()
+    destruir_widget(inicio)
     if 'login_frame' in globals():
-        login_frame.destroy()
+        destruir_widget(login_frame)
     if 'recuperacion_frame' in globals():
-        recuperacion_frame.destroy()
+        destruir_widget(recuperacion_frame)
 
     registro_frame = Frame(menu, width=x, height=y, bg=B)
     registro_frame.pack(fill=BOTH, expand=TRUE)
@@ -565,11 +609,11 @@ def recuperacion_screen():
     global imagenUser, user, lock  
     global recuperacion_frame
 
-    inicio.destroy()
+    destruir_widget(inicio)
     if 'login_frame' in globals():
-        login_frame.destroy()
+        destruir_widget(login_frame)
     if 'registro_frame' in globals():
-        registro_frame.destroy()
+        destruir_widget(registro_frame)
 
     recuperacion_frame = Frame(menu, width=x, height=y, bg=B)
     recuperacion_frame.pack(fill=BOTH, expand=TRUE)
